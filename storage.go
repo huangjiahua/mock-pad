@@ -55,6 +55,11 @@ func (db *DB) Get(key string, value interface{}) error {
 	return nil
 }
 
+func (db *DB) Has(key string) bool {
+	r, _ := db.ldb.Has([]byte(key), nil)
+	return r
+}
+
 func (db *DB) Put(domain, key string, value interface{}) error {
 	data, err := json.Marshal(value)
 	if err != nil {

@@ -3,7 +3,9 @@ package main
 import (
 	"html/template"
 	"log"
+	"math/rand"
 	"os"
+	"time"
 )
 
 var (
@@ -15,9 +17,11 @@ var (
 	fbDBUrl        = ""
 
 	tpl *template.Template = nil
+	db  *DB
 )
 
 func init() {
+	rand.Seed(time.Now().UnixNano())
 	// get url prefix
 	urlPrefix = os.Getenv("URL_PREFIX")
 	if urlPrefix == "" {
@@ -44,6 +48,8 @@ func init() {
 			log.Fatal(err)
 		}
 		localDBPrefix = path
+
+		db = NewDB(localDBPrefix, []string{"session", "owner"})
 	}
 
 	// get FireBase configuration
