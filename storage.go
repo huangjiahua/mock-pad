@@ -21,7 +21,7 @@ type DB struct {
 	ldb    *leveldb.DB
 }
 
-func newDB(prefix string, domains []string) *DB {
+func NewDB(prefix string, domains []string) *DB {
 	db := DB{}
 
 	ldb, err := leveldb.OpenFile(prefix+dbDirName, nil)
@@ -31,16 +31,19 @@ func newDB(prefix string, domains []string) *DB {
 
 	db.prefix = prefix
 	db.domain = make(map[string]bool)
+	for _, v := range domains {
+		db.domain[v] = true
+	}
 	db.ldb = ldb
 
 	return &db
 }
 
-func (db *DB) close() {
+func (db *DB) Close() {
 	_ = db.ldb.Close()
 }
 
-func (db *DB) get(key string, value interface{}) error {
+func (db *DB) Get(key string, value interface{}) error {
 	data, err := db.ldb.Get([]byte(key), nil)
 	if err != nil {
 		return mapError(err)
@@ -52,7 +55,7 @@ func (db *DB) get(key string, value interface{}) error {
 	return nil
 }
 
-func (db *DB) put(domain, key string, value interface{}) error {
+func (db *DB) Put(domain, key string, value interface{}) error {
 	data, err := json.Marshal(value)
 	if err != nil {
 		return ErrJson
@@ -62,6 +65,28 @@ func (db *DB) put(domain, key string, value interface{}) error {
 	if err != nil {
 		return mapError(err)
 	}
+	return nil
+}
+
+func (db *DB) Write(b *Batch) error {
+	err := db.ldb.Write(b.lb, nil)
+	if err != nil {
+		return ErrDbInternal
+	}
+	return nil
+}
+
+type Batch struct {
+	lb *leveldb.Batch
+}
+
+func (b *Batch) Put(domain, key string, value interface{}) error {
+	data, err := json.Marshal(value)
+	if err != nil {
+		return ErrJson
+	}
+	k := domain + "-" + key
+	b.lb.Put([]byte(k), data)
 	return nil
 }
 
